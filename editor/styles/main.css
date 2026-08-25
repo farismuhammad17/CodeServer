@@ -1,0 +1,52 @@
+/*
+=====================================================================
+Copyright 2026 Faris Muhammad
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+=====================================================================
+*/
+
+:root {
+    --bg-main: #1e1e1e;
+    --bg-sidebar: #252526;
+    --bg-card: #2d2d2d;
+    --bg-hover: #37373d;
+
+    --text-main: #cccccc;
+    --text-muted: #858585;
+
+    --accent-primary: #007acc;
+    --accent-hover: #1f8ad2;
+    --accent-success: #4ec9b0;
+    --accent-warning: #cca700;
+    --accent-danger: #f44747;
+
+    --border-color: #3f3f46;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    display: flex;
+    flex-direction: row;
+
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+    background-color: var(--bg-main);
+    color: var(--text-main);
+}
