@@ -20,7 +20,7 @@ limitations under the License.
 
 #activity-bar {
     width: 40px;
-    background-color: var(--bg-activity-bar, #333333);
+    background-color: var(--bg-sidebar);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -71,12 +71,12 @@ limitations under the License.
 }
 
 #btn-toggle-sidebar:hover, .nav-tab:hover {
-    color: var(--text-hover, #ffffff);
-    background-color: var(--bg-hover, rgba(255, 255, 255, 0.05));
+    color: var(--text-main);
+    background-color: var(--bg-hover);
 }
 
 .nav-tab.active {
-    color: var(--text-hover, #ffffff);
+    color: var(--text-main);
 }
 
 /* --- Collapsible Sidebar Panel --- */
@@ -116,7 +116,7 @@ aside.collapsed {
 .users-list-container {
     padding: 8px 12px;
     font-size: 13px;
-    color: var(--text-muted, #858585);
+    color: var(--text-muted);
 }
 
 .sidebar-section {
@@ -128,7 +128,7 @@ aside.collapsed {
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.5px;
-    color: var(--text-muted, #858585);
+    color: var(--text-muted);
     padding: 6px 12px;
     text-transform: uppercase;
 }
@@ -137,39 +137,6 @@ aside.collapsed {
     border: none;
     border-top: 1px solid var(--border-color);
     margin: 8px 0;
-}
-
-#file-tree, #unsaved-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-}
-
-.file-item {
-    display: flex;
-    align-items: center;
-    padding: 4px 12px;
-    cursor: pointer;
-    font-size: 13px;
-    color: var(--text-main, #cccccc);
-    user-select: none;
-}
-
-.file-item:hover {
-    background-color: var(--bg-hover, rgba(255, 255, 255, 0.05));
-    color: var(--text-hover, #ffffff);
-}
-
-.file-name {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.file-item.is-dirty .file-name::after {
-    content: " ●";
-    color: #3794ff;
-    font-size: 10px;
 }
 
 /* --- Action Buttons --- */
@@ -185,7 +152,7 @@ aside.collapsed {
 .sidebar-actions button {
     background: transparent;
     border: none;
-    color: var(--text-muted, #858585);
+    color: var(--text-muted);
     cursor: pointer;
     font-size: 14px;
     padding: 4px 6px;
@@ -200,6 +167,114 @@ aside.collapsed {
 }
 
 .sidebar-actions button:hover {
-    background-color: var(--bg-hover, rgba(255, 255, 255, 0.05));
-    color: var(--text-hover, #ffffff);
+    background-color: var(--bg-hover);
+    color: var(--text-main);
+}
+
+/* --- File explorer --- */
+
+#file-tree, #unsaved-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    padding: 4px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-main);
+    user-select: none;
+}
+
+.file-item:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-main);
+}
+
+.file-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-item.is-dirty .file-name::after {
+    content: " ●";
+    color: var(--accent-primary);
+    font-size: 10px;
+}
+
+/* --- Settings --- */
+
+.settings-container {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.setting-group {
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.setting-group label,
+.setting-group > label {
+    font-size: 0.85rem;
+    color: var(--text-main);
+}
+
+.setting-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin: 0 0 4px 0;
+    line-height: 1.4;
+}
+
+.setting-input-row {
+    display: flex;
+    gap: 6px;
+}
+
+.setting-input,
+.setting-group select {
+    flex-grow: 1;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 5px 8px;
+    font-size: 13px;
+    border-radius: 2px;
+    outline: none;
+}
+
+.setting-input:focus,
+.setting-group select:focus {
+    border-color: var(--accent-primary);
+}
+
+.setting-btn {
+    background-color: var(--accent-primary);
+    color: var(--text-main);
+    border: none;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+.setting-btn:hover {
+    background-color: var(--accent-hover);
+}
+
+.setting-status {
+    font-size: 11px;
+    min-height: 16px;
+    color: var(--accent-success);
+    margin-top: 2px;
 }

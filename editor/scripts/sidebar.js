@@ -16,34 +16,32 @@ limitations under the License.
 =====================================================================
 */
 
-document.addEventListener('DOMContentLoaded', () => {
-    const sidebar = document.getElementById('main-sidebar');
+const sidebar = document.getElementById('main-sidebar');
 
-    // Hamburger Toggle
-    const toggleBtn = document.getElementById('btn-toggle-sidebar');
-    if (toggleBtn && sidebar) {
-        toggleBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
+// Hamburger Toggle
+const toggleBtn = document.getElementById('btn-toggle-sidebar');
+if (toggleBtn && sidebar) {
+    toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+    });
+}
+
+// Nested View Switcher Tabs
+const navTabs = document.querySelectorAll('.nav-tab');
+navTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        const targetView = tab.getAttribute('data-view');
+
+        navTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        document.querySelectorAll('.sidebar-view').forEach(view => {
+            view.classList.remove('active');
         });
-    }
 
-    // Nested View Switcher Tabs
-    const navTabs = document.querySelectorAll('.nav-tab');
-    navTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const targetView = tab.getAttribute('data-view');
-
-            navTabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-
-            document.querySelectorAll('.sidebar-view').forEach(view => {
-                view.classList.remove('active');
-            });
-
-            const activeViewPanel = document.getElementById(`view-${targetView}`);
-            if (activeViewPanel) {
-                activeViewPanel.classList.add('active');
-            }
-        });
+        const activeViewPanel = document.getElementById(`view-${targetView}`);
+        if (activeViewPanel) {
+            activeViewPanel.classList.add('active');
+        }
     });
 });

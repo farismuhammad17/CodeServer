@@ -28,7 +28,7 @@ limitations under the License.
 
 #include "crow.h"
 
-#define CS_VERSION "0.3.1"
+#define CS_VERSION "0.3.2"
 
 namespace fs = std::filesystem;
 
@@ -171,6 +171,84 @@ crow::response handle_api_connect(const crow::request& req) {
     }
 
     return crow::response(200, "Connected successfully");
+}
+
+crow::response handle_api_settings_username(const crow::request& req) {
+    std::string ip = req.remote_ip_address;
+    if (ip.empty()) {
+        return crow::response(400, "Invalid client IP address");
+    }
+
+    auto x = crow::json::load(req.body);
+    if (!x || !x.has("username")) {
+        return crow::response(400, "Missing 'username' in JSON payload");
+    }
+
+    std::string new_username = x["username"].s();
+
+    new_username.erase(std::remove(new_username.begin(), new_username.end(), ','), new_username.end());
+    new_username.erase(std::remove(new_username.begin(), new_username.end(), '\n'), new_username.end());
+    new_username.erase(std::remove(new_username.begin(), new_username.end(), '\r'), new_username.end());
+
+    if (new_username.empty()) {
+        return crow::response(400, "Username cannot be empty");
+    }
+
+    std::lock_guard<std::mutex> lock(users_mutex);
+
+    auto it = std::find_if(active_users.begin(), active_users.end(), [&](const User& u) {
+        return u.ip == ip;
+    });
+
+    if (it != active_users.end()) {
+        it->name = new_username;
+    } else {
+        active_users.push_back({ip, new_username, "", 0});
+    }
+
+    fs::path users_file_path = HOST_DIR / ".codeserver" / "users.dat";
+    std::vector<std::string> lines;
+    bool found = false;
+
+    if (fs::exists(users_file_path)) {
+        std::ifstream in(users_file_path);
+        std::string line;
+
+        while (std::getline(in, line)) {
+            if (line.empty()) continue;
+            size_t comma_pos = line.find(',');
+
+            if (comma_pos != std::string::npos) {
+                if (line.substr(0, comma_pos) == ip) {
+                    lines.push_back(ip + "," + new_username);
+                    found = true;
+                    continue;
+                }
+            }
+
+            lines.push_back(line);
+        }
+
+        in.close();
+    }
+
+    if (!found) {
+        lines.push_back(ip + "," + new_username);
+    }
+
+    std::ofstream out(users_file_path, std::ios::out | std::ios::trunc);
+    if (!out.is_open()) {
+        return crow::response(500, "Failed to write user configuration to disk");
+    }
+
+    for (const auto& l : lines) {
+        out << l << "\n";
+    }
+
+    out.close();
+
+    std::cout << "[USER UPDATE] " << ip << " changed name to: " << new_username << "\n";
+    return crow::response(200, "Username saved successfully");
 }
 
 crow::response handle_api_tree() {
@@ -393,10 +471,15 @@ int main() {
     CROW_ROUTE(app, "/styles/<string>")(handle_styles);
     CROW_ROUTE(app, "/scripts/<string>")(handle_scripts);
     CROW_ROUTE(app, "/assets/<string>")(handle_assets);
-    CROW_ROUTE(app, "/api/connect").methods(crow::HTTPMethod::POST)(handle_api_connect);
+    CROW_ROUTE(app, "/api/connect")
+        .methods(crow::HTTPMethod::POST)(handle_api_connect);
+    CROW_ROUTE(app, "/api/settings/username")
+        .methods(crow::HTTPMethod::POST)(handle_api_settings_username);
     CROW_ROUTE(app, "/api/tree")(handle_api_tree);
-    CROW_ROUTE(app, "/api/file").methods(crow::HTTPMethod::GET)(handle_open_file);
-    CROW_ROUTE(app, "/api/save").methods(crow::HTTPMethod::POST)(handle_save_file);
+    CROW_ROUTE(app, "/api/file")
+        .methods(crow::HTTPMethod::GET)(handle_open_file);
+    CROW_ROUTE(app, "/api/save")
+        .methods(crow::HTTPMethod::POST)(handle_save_file);
 
     std::cout << "[INFO] Starting web server on http://localhost:" << SERVER_PORT << "\n";
     app.port(SERVER_PORT).multithreaded().run();

@@ -176,25 +176,23 @@ function renderFolder(node) {
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    fetchFileTree();
-    renderUnsavedSection();
+fetchFileTree();
+renderUnsavedSection();
 
-    // Refresh button event listener
-    const refreshBtn = document.getElementById('btn-refresh');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', () => {
-            fetchFileTree();
-            renderUnsavedSection();
-        });
-    }
-
-    // Placeholders for future buttons
-    document.getElementById('btn-new-file').addEventListener('click', () => {
-        cs_alert("Action not yet implemented");
+// Refresh button event listener
+const refreshBtn = document.getElementById('btn-refresh');
+if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+        fetchFileTree();
+        renderUnsavedSection();
     });
+}
 
-    document.getElementById('btn-new-folder').addEventListener('click', () => {
-        cs_alert("Action not yet implemented");
-    });
+// Placeholders for future buttons
+document.getElementById('btn-new-file').addEventListener('click', () => {
+    cs_alert("Action not yet implemented");
+});
+
+document.getElementById('btn-new-folder').addEventListener('click', () => {
+    cs_alert("Action not yet implemented");
 });

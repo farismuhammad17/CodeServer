@@ -85,6 +85,26 @@ limitations under the License.
 
         <div id="view-settings" class="sidebar-view">
             <div class="section-header">SETTINGS</div>
+            <div class="settings-container">
+                <div class="setting-group">
+                    <label class="setting-label" for="username-input">Username</label>
+                    <p class="setting-desc">Your display name shown to other active users in the workspace.</p>
+                    <div class="setting-input-row">
+                        <input type="text" id="username-input" class="setting-input" placeholder="Enter username..." maxlength="24" />
+                        <button id="btn-save-username" class="setting-btn">Save</button>
+                    </div>
+                    <span id="settings-status" class="setting-status"></span>
+                </div>
+
+                <div class="setting-group">
+                    <label for="theme-select">Theme</label>
+                    <select id="theme-select" onchange="changeTheme(this.value)">
+                        <option value="dark">Dark</option>
+                        <option value="hc_dark">Dark (High contrast)</option>
+                        <option value="light">Light</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
         <template id="file-item-template">
@@ -115,5 +135,6 @@ limitations under the License.
     <script defer src="/scripts/editor.js"></script>
     <script defer src="/scripts/explorer.js"></script>
     <script defer src="/scripts/main.js"></script>
+    <script defer src="/scripts/settings.js"></script>
 </body>
 </html>

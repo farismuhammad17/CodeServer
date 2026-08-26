@@ -21,6 +21,9 @@ A C++ backend, browser code editor built with the Crow framework, designed to le
     * Provides all required actions.
     * Simple file explorer to navigate through folders.
     * Keeps mention of your unsaved work.
+* **Users**
+    * Allows users to set and update their username, stored on the server.
+    * Lets users choose a theme to work in
 * **Safe Saving**
     * In the event where the server is unreachable or client connection has dropped, your unsaved work is never lost, due to the local caching mechanism.
     * All client changes are stored into `localStorage` first.
@@ -39,12 +42,11 @@ A C++ backend, browser code editor built with the Crow framework, designed to le
     * Instead of a complex diff algorithm, just run diff on the client side and put the old code and the new code together, and let the user deal with the conflict.
 
 * **Inter-User system**
-    * Preferences for theme, font, etc., where you can add username, "update" sends to server the IP to update the username of.
-    * Store user name inside codeserver folder, use IP addresses to remember
     * Chat system; store chat messages (msg, user, time) inside `.codeserver` folder
     * Voice chat: A google meet sort of thing, but just voice, video seems pointless.
     * Track every IP (and username) that came in, so we can have nice "Online"/"Offline" show up.
 
+* Alerts should be made nicer with custom GUI popups.
 * **Workspace ZIP download endpoint** for instant export.
 
 * Only broadcast every character (throttled to half seconds) if two users are viewing the exact same file, else, don't bother sending change data.
@@ -77,9 +79,11 @@ A C++ backend, browser code editor built with the Crow framework, designed to le
     * users: List all users and user information
     * mem: RAM used by program
 
-**Other media:** Currently, viewing PNG, JPG, etc., just dumps the raw bytes (which looks like gibberish) into the editor. We should implement a simple image viewer, and perhaps even a video player, that can stream the media from the server to the client. This is obviously a low priority, but it would be nice to have.
+* **Other media:** Currently, viewing PNG, JPG, etc., just dumps the raw bytes (which looks like gibberish) into the editor. We should implement a simple image viewer, and perhaps even a video player, that can stream the media from the server to the client. This is obviously a low priority, but it would be nice to have.
 
-**Blocked users / Only allowed users:** Since it *may* be hosted on the internet, it is probably better to not nuke your project if some random person comes in and deletes your files. Therefore, we should implement a simple user system, where you can add users to a "blocked" list, or an "allowed" list. If a user is blocked, they cannot access the server at all. You can use via the config menu, but also have it dynamic through the TUI.
+* **Blocked users / Only allowed users:** Since it *may* be hosted on the internet, it is probably better to not nuke your project if some random person comes in and deletes your files. Therefore, we should implement a simple user system, where you can add users to a "blocked" list, or an "allowed" list. If a user is blocked, they cannot access the server at all. You can use via the config menu, but also have it dynamic through the TUI.
+
+* **More theme:** Defaults look bland. Support more themes, or allow users to create custom themes. Let users create themes in JavaScript, or find ways to parse themes made for VS Code. Just store the JSON string in cache and parse it on load everytime, so the user doesn't have to click "Import theme" everytime.
 
 ---
 
