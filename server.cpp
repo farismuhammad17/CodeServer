@@ -21,15 +21,32 @@ limitations under the License.
 #include <string>
 #include <filesystem>
 
+#include <string>
+#include <chrono>
+#include <vector>
+#include <mutex>
+
 #include "crow.h"
 
-#define CS_VERSION "0.2.0"
+#define CS_VERSION "0.3.0"
 
 namespace fs = std::filesystem;
+
+struct User {
+    std::string ip;
+    std::string name;
+    std::string current_file;
+    uint32_t current_file_hash;
+};
+
+std::vector<User> active_users;
+std::mutex users_mutex;
 
 fs::path HOST_DIR;
 int SERVER_PORT = 8000; // Default fallback
 std::vector<std::string> IGNORED_ITEMS;
+
+// --- LIBRARY ---
 
 // Ensures any requested path stays strictly inside HOST_DIR
 bool is_safe_path(const fs::path& target_path) {
@@ -57,6 +74,186 @@ bool is_safe_path(const fs::path& target_path) {
     } catch (...) {
         return false;
     }
+}
+
+uint32_t hash_str_to_int(const std::string& text) {
+    uint32_t hash = 2166136261u;
+    for (char c : text) {
+        hash ^= static_cast<uint32_t>(c);
+        hash *= 16777619u;
+    }
+    return hash;
+}
+
+// --- API ---
+
+crow::response handle_root() {
+    std::ifstream file("editor/index.html");
+
+    if (!file.is_open()) {
+        return crow::response(404, "index.html not found in editor folder");
+    }
+
+    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
+    // Create response and set Content-Type to HTML
+    crow::response res(content);
+    res.set_header("Content-Type", "text/html");
+    return res;
+}
+
+crow::response handle_styles(std::string filename) {
+    std::string filepath = "editor/styles/" + filename;
+    std::ifstream file(filepath);
+    if (!file.is_open()) return crow::response(404);
+    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    crow::response res(content);
+    res.set_header("Content-Type", "text/css");
+    return res;
+}
+
+crow::response handle_scripts(std::string filename) {
+    std::string filepath = "editor/scripts/" + filename;
+    std::ifstream file(filepath);
+    if (!file.is_open()) return crow::response(404);
+    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    crow::response res(content);
+    res.set_header("Content-Type", "application/javascript");
+    return res;
+}
+
+crow::response handle_api_connect(const crow::request& req) {
+    std::string ip = req.remote_ip_address;
+    if (ip.empty()) {
+        return crow::response(400, "Invalid client IP address");
+    }
+
+    std::lock_guard<std::mutex> lock(users_mutex);
+
+    auto it = std::find_if(active_users.begin(), active_users.end(), [&](const User& u) {
+        return u.ip == ip;
+    });
+
+    if (it == active_users.end()) {
+        std::string default_name = "User-" + ip.substr(ip.find_last_of('.') + 1);
+        active_users.push_back({
+            ip,
+            default_name,
+            "",
+            0
+        });
+        std::cout << "[USER JOINED] " << ip << " registered as " << default_name << "\n";
+    }
+
+    return crow::response(200, "Connected successfully");
+}
+
+crow::response handle_api_tree() {
+    crow::json::wvalue res;
+    int idx = 0;
+
+    try {
+        for (const auto& entry : fs::recursive_directory_iterator(HOST_DIR)) {
+            std::string rel_path = fs::relative(entry.path(), HOST_DIR).string();
+
+            // Check against config ignores
+            bool ignored = false;
+            for (const auto& ignore_pattern : IGNORED_ITEMS) {
+                if (rel_path.rfind(ignore_pattern, 0) == 0 || rel_path.find("/" + ignore_pattern) != std::string::npos) {
+                    ignored = true;
+                    break;
+                }
+            }
+            if (ignored) continue;
+
+            res[idx]["path"] = rel_path;
+            res[idx]["is_directory"] = entry.is_directory();
+            idx++;
+        }
+    } catch (...) {
+        return crow::response(500, "Error scanning directory");
+    }
+
+    return crow::response(res);
+}
+
+crow::response handle_open_file(const crow::request& req) {
+    char* filepath_param = req.url_params.get("path");
+    if (!filepath_param) {
+        return crow::response(400, "Missing 'path' query parameter");
+    }
+
+    fs::path target_file = HOST_DIR / filepath_param;
+
+    if (!is_safe_path(target_file) || !fs::exists(target_file) || fs::is_directory(target_file)) {
+        return crow::response(403, "Access denied or file not found");
+    }
+
+    std::string ip = req.remote_ip_address;
+    if (ip.empty()) {
+        return crow::response(400, "Invalid client IP address");
+    }
+
+    std::string rel_path = filepath_param;
+
+    std::lock_guard<std::mutex> lock(users_mutex);
+    auto it = std::find_if(active_users.begin(), active_users.end(), [&](const User& u) {
+        return u.ip == ip;
+    });
+
+    if (it != active_users.end()) {
+        it->current_file = rel_path;
+        it->current_file_hash = hash_str_to_int(rel_path);
+    } else {
+        std::string default_name = "User-" + ip.substr(ip.find_last_of('.') + 1);
+        active_users.push_back({
+            ip,
+            default_name,
+            rel_path,
+            hash_str_to_int(rel_path)
+        });
+    }
+
+    std::ifstream file(target_file);
+    if (!file.is_open()) {
+        return crow::response(500, "Failed to open file");
+    }
+
+    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    return crow::response(content);
+}
+
+crow::response handle_save_file(const crow::request& req) {
+    char* filepath_param = req.url_params.get("path");
+    if (!filepath_param) {
+        return crow::response(400, "Missing 'path' query parameter");
+    }
+
+    fs::path target_file = HOST_DIR / filepath_param;
+
+    if (!is_safe_path(target_file) || fs::is_directory(target_file)) {
+        return crow::response(403, "Access denied or invalid path");
+    }
+
+    // If parent directories were somehow deleted, recreate them
+    try {
+        if (target_file.has_parent_path() && !fs::exists(target_file.parent_path())) {
+            fs::create_directories(target_file.parent_path());
+        }
+    } catch (...) {
+        return crow::response(500, "Failed to create parent directories");
+    }
+
+    // Write the request body (the file content) to disk
+    std::ofstream out_file(target_file, std::ios::out | std::ios::trunc);
+    if (!out_file.is_open()) {
+        return crow::response(500, "Failed to open file for writing");
+    }
+
+    out_file << req.body;
+    out_file.close();
+
+    return crow::response(200, "File saved successfully");
 }
 
 int main() {
@@ -167,130 +364,13 @@ int main() {
 
     crow::SimpleApp app;
 
-    // Routing editor website to root
-    CROW_ROUTE(app, "/")([](){
-        std::ifstream file("editor/index.html");
-
-        if (!file.is_open()) {
-            return crow::response(404, "index.html not found in editor folder");
-        }
-
-        std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-
-        // Create response and set Content-Type to HTML
-        crow::response res(content);
-        res.set_header("Content-Type", "text/html");
-        return res;
-    });
-
-    // Serve CSS files
-    CROW_ROUTE(app, "/styles/<string>")([](std::string filename){
-        std::string filepath = "editor/styles/" + filename;
-        std::ifstream file(filepath);
-        if (!file.is_open()) return crow::response(404);
-        std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-        crow::response res(content);
-        res.set_header("Content-Type", "text/css");
-        return res;
-    });
-
-    // Serve JS files
-    CROW_ROUTE(app, "/scripts/<string>")([](std::string filename){
-        std::string filepath = "editor/scripts/" + filename;
-        std::ifstream file(filepath);
-        if (!file.is_open()) return crow::response(404);
-        std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-        crow::response res(content);
-        res.set_header("Content-Type", "application/javascript");
-        return res;
-    });
-
-    // API: List workspace files as a flat array
-    CROW_ROUTE(app, "/api/tree")([](){
-        crow::json::wvalue res;
-        int idx = 0;
-
-        try {
-            for (const auto& entry : fs::recursive_directory_iterator(HOST_DIR)) {
-                std::string rel_path = fs::relative(entry.path(), HOST_DIR).string();
-
-                // Check against config ignores
-                bool ignored = false;
-                for (const auto& ignore_pattern : IGNORED_ITEMS) {
-                    if (rel_path.rfind(ignore_pattern, 0) == 0 || rel_path.find("/" + ignore_pattern) != std::string::npos) {
-                        ignored = true;
-                        break;
-                    }
-                }
-                if (ignored) continue;
-
-                res[idx]["path"] = rel_path;
-                res[idx]["is_directory"] = entry.is_directory();
-                idx++;
-            }
-        } catch (...) {
-            return crow::response(500, "Error scanning directory");
-        }
-
-        return crow::response(res);
-    });
-
-    // API: Read a specific file's contents safely
-    CROW_ROUTE(app, "/api/file").methods(crow::HTTPMethod::GET)([](const crow::request& req){
-        char* filepath_param = req.url_params.get("path");
-        if (!filepath_param) {
-            return crow::response(400, "Missing 'path' query parameter");
-        }
-
-        fs::path target_file = HOST_DIR / filepath_param;
-
-        // Enforce sandbox security boundary
-        if (!is_safe_path(target_file) || !fs::exists(target_file) || fs::is_directory(target_file)) {
-            return crow::response(403, "Access denied or file not found");
-        }
-
-        std::ifstream file(target_file);
-        if (!file.is_open()) {
-            return crow::response(500, "Failed to open file");
-        }
-
-        std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-        return crow::response(content);
-    });
-
-    // To save a file provided. Creates new file if file is not there.
-    CROW_ROUTE(app, "/api/save").methods(crow::HTTPMethod::POST)([](const crow::request& req){
-        char* filepath_param = req.url_params.get("path");
-        if (!filepath_param) {
-            return crow::response(400, "Missing 'path' query parameter");
-        }
-
-        fs::path target_file = HOST_DIR / filepath_param;
-
-        if (!is_safe_path(target_file) || fs::is_directory(target_file)) {
-            return crow::response(403, "Access denied or invalid path");
-        }
-
-        // If parent directories were somehow deleted, recreate them
-        try {
-            if (target_file.has_parent_path() && !fs::exists(target_file.parent_path())) {
-                fs::create_directories(target_file.parent_path());
-            }
-        } catch (...) {
-            return crow::response(500, "Failed to create parent directories");
-        }
-
-        // Write the request body (the file content) to disk
-        std::ofstream out_file(target_file, std::ios::out | std::ios::trunc);
-        if (!out_file.is_open()) {
-            return crow::response(500, "Failed to open file for writing");
-        }
-
-        out_file << req.body;
-        out_file.close();
-
-        return crow::response(200, "File saved successfully");
-    });
+    CROW_ROUTE(app, "/")(handle_root);
+    CROW_ROUTE(app, "/styles/<string>")(handle_styles);
+    CROW_ROUTE(app, "/scripts/<string>")(handle_scripts);
+    CROW_ROUTE(app, "/api/connect").methods(crow::HTTPMethod::POST)(handle_api_connect);
+    CROW_ROUTE(app, "/api/tree")(handle_api_tree);
+    CROW_ROUTE(app, "/api/file").methods(crow::HTTPMethod::GET)(handle_open_file);
+    CROW_ROUTE(app, "/api/save").methods(crow::HTTPMethod::POST)(handle_save_file);
 
     std::cout << "[INFO] Starting web server on http://localhost:" << SERVER_PORT << "\n";
     app.port(SERVER_PORT).multithreaded().run();

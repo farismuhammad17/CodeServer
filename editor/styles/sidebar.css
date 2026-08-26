@@ -16,15 +16,107 @@ limitations under the License.
 =====================================================================
 */
 
+/* --- Activity Bar --- */
+
+#activity-bar {
+    width: 40px;
+    background-color: var(--bg-activity-bar, #333333);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-right: 1px solid var(--border-color);
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+#activity-bar button svg,
+.sidebar-actions button svg {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px;
+    min-height: 18px;
+    stroke: currentColor;
+    fill: none;
+    display: block;
+}
+
+#activity-bar button,
+.sidebar-actions button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.activity-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+}
+
+#btn-toggle-sidebar, .nav-tab {
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted, #858585);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+#btn-toggle-sidebar:hover, .nav-tab:hover {
+    color: var(--text-hover, #ffffff);
+    background-color: var(--bg-hover, rgba(255, 255, 255, 0.05));
+}
+
+.nav-tab.active {
+    color: var(--text-hover, #ffffff);
+}
+
+/* --- Collapsible Sidebar Panel --- */
+
 aside {
     width: 250px;
     flex-shrink: 0;
-    padding: 6px 0;
+    padding: 0;
     background-color: var(--bg-sidebar);
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+    transition: width 0.2s ease;
+}
+
+aside.collapsed {
+    width: 0px;
+    border-right: none;
+}
+
+/* --- View Switching --- */
+
+.sidebar-view {
+    display: none;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow-y: auto;
+    width: 250px;
+}
+
+.sidebar-view.active {
+    display: flex;
+}
+
+.users-list-container {
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text-muted, #858585);
 }
 
 .sidebar-section {
@@ -51,7 +143,6 @@ aside {
     display: flex;
     flex-direction: column;
     gap: 1px;
-    overflow-y: auto;
 }
 
 .file-item {

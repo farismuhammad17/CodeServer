@@ -1,7 +1,9 @@
 # CodeServer
 
+*Version 0.3.0*
+
 > [!IMPORTANT]
-> The project is still under construction (v0.2.0), and still a works in concept. Testing is still pending.
+> The project is still under construction, and still a works in concept. Testing is still pending.
 
 A C++ backend, browser code editor built with the Crow framework, designed to let you instantly host a coding workspace right from your own machine. Inspired by the live-editting feature of Google Docs (and other notable code editors), I built CodeServer as a medium to collaborate with fellow programmers, and to let you code from anywhere, without the need to install any IDEs or editors. It can also double as a remote work station, where you can edit, test, and view your code from anywhere, as long as you server is up.
 
@@ -11,6 +13,7 @@ A C++ backend, browser code editor built with the Crow framework, designed to le
     * Monaco Editor (the same editor that powers VS Code) provides syntax highlighting, code folding, and bracket matching.
     * Automatically maps file extensions to the correct Monaco language parser on the fly.
 * **Sidebar**
+    * Toggleable sidebar with navigation bar.
     * Provides all required actions.
     * Simple file explorer to navigate through folders.
     * Keeps mention of your unsaved work.
@@ -38,10 +41,6 @@ A C++ backend, browser code editor built with the Crow framework, designed to le
     * Track every IP (and username) that came in, so we can have nice "Online"/"Offline" show up.
 
 * **Workspace ZIP download endpoint** for instant export.
-
-* **Sidebar**
-    * Make sidebar toggleable.
-    * Add menus to it: file explorer, settings, chat, etc.
 
 * Only broadcast every character (throttled to half seconds) if two users are viewing the exact same file, else, don't bother sending change data.
     * Store vector of users(ip, name, current_file, uint32_t current_file_hash), and hash file relative path from `PATH` from config.
