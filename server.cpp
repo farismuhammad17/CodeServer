@@ -23,7 +23,7 @@ limitations under the License.
 
 #include "crow.h"
 
-#define CS_VERSION "0.1.0"
+#define CS_VERSION "0.2.0"
 
 namespace fs = std::filesystem;
 
@@ -34,24 +34,27 @@ std::vector<std::string> IGNORED_ITEMS;
 // Ensures any requested path stays strictly inside HOST_DIR
 bool is_safe_path(const fs::path& target_path) {
     try {
-        // Resolve absolute canonical paths to resolve any "../" tricks
-        fs::path canonical_host = fs::canonical(HOST_DIR);
-        fs::path canonical_target = fs::canonical(target_path);
+        // Get the absolute of our workspace
+        fs::path canonical_host = fs::absolute(HOST_DIR).lexically_normal();
 
-        // Check if the target path starts with the host path prefix
+        // Get the absolute path of the target
+        fs::path absolute_target = fs::absolute(target_path).lexically_normal();
+
+        // Iterate through both paths to ensure absolute_target starts with canonical_host
         auto host_it = canonical_host.begin();
-        auto target_it = canonical_target.begin();
+        auto target_it = absolute_target.begin();
 
-        while (host_it != canonical_host.end() && target_it != canonical_target.end()) {
-            if (*host_it != *target_it) return false;
+        while (host_it != canonical_host.end()) {
+            // If target runs out of parts before host, or parts don't match, it's outside!
+            if (target_it == absolute_target.end() || *host_it != *target_it) {
+                return false;
+            }
             ++host_it;
             ++target_it;
         }
 
-        // If host path ran out, it means target is inside or equal to host
-        return host_it == canonical_host.end();
+        return true;
     } catch (...) {
-        // If file doesn't exist yet or path is invalid
         return false;
     }
 }
@@ -253,6 +256,40 @@ int main() {
 
         std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         return crow::response(content);
+    });
+
+    // To save a file provided. Creates new file if file is not there.
+    CROW_ROUTE(app, "/api/save").methods(crow::HTTPMethod::POST)([](const crow::request& req){
+        char* filepath_param = req.url_params.get("path");
+        if (!filepath_param) {
+            return crow::response(400, "Missing 'path' query parameter");
+        }
+
+        fs::path target_file = HOST_DIR / filepath_param;
+
+        if (!is_safe_path(target_file) || fs::is_directory(target_file)) {
+            return crow::response(403, "Access denied or invalid path");
+        }
+
+        // If parent directories were somehow deleted, recreate them
+        try {
+            if (target_file.has_parent_path() && !fs::exists(target_file.parent_path())) {
+                fs::create_directories(target_file.parent_path());
+            }
+        } catch (...) {
+            return crow::response(500, "Failed to create parent directories");
+        }
+
+        // Write the request body (the file content) to disk
+        std::ofstream out_file(target_file, std::ios::out | std::ios::trunc);
+        if (!out_file.is_open()) {
+            return crow::response(500, "Failed to open file for writing");
+        }
+
+        out_file << req.body;
+        out_file.close();
+
+        return crow::response(200, "File saved successfully");
     });
 
     std::cout << "[INFO] Starting web server on http://localhost:" << SERVER_PORT << "\n";

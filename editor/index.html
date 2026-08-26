@@ -29,13 +29,56 @@ limitations under the License.
     <link rel="stylesheet" href="/styles/body.css">
 </head>
 <body>
-    <aside>
-        <div id="file-tree"></div>
+    <!-- Hidden SVG Sprite Sheet -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;" aria-hidden="true">
+        <!-- New File Icon -->
+        <symbol id="icon-file-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="11" x2="12" y2="17"/>
+            <line x1="9" y1="14" x2="15" y2="14"/>
+        </symbol>
 
-        <!-- Hidden Template for sidebar items -->
+        <!-- New Folder Icon -->
+        <symbol id="icon-folder-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            <line x1="12" y1="11" x2="12" y2="17"/>
+            <line x1="9" y1="14" x2="15" y2="14"/>
+        </symbol>
+
+        <!-- Refresh Icon -->
+        <symbol id="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.73-5.73"/>
+        </symbol>
+    </svg>
+
+    <aside>
+        <div id="sidebar-actions" class="sidebar-actions">
+            <button id="btn-new-file" title="New File">
+                <svg class="icon"><use href="#icon-file-plus"></use></svg>
+            </button>
+            <button id="btn-new-folder" title="New Folder">
+                <svg class="icon"><use href="#icon-folder-plus"></use></svg>
+            </button>
+            <button id="btn-refresh" title="Refresh Workspace">
+                <svg class="icon"><use href="#icon-refresh"></use></svg>
+            </button>
+        </div>
+
+        <div id="unsaved-section" class="sidebar-section" style="display: none;">
+            <div class="section-header">UNSAVED CHANGES</div>
+            <div id="unsaved-list"></div>
+            <hr class="section-divider">
+        </div>
+
+        <div class="sidebar-section">
+            <div class="section-header">EXPLORER</div>
+            <div id="file-tree"></div>
+        </div>
+
+        <!-- Hidden Template -->
         <template id="file-item-template">
             <div class="file-item">
-                <img class="file-icon" src="" alt="" style="display: none;" />
                 <span class="file-name"></span>
             </div>
         </template>
@@ -43,7 +86,7 @@ limitations under the License.
 
     <main>
         <div id="main-top">
-            <p id="breadcrumbs">/home/faris/CodeServer/</p>
+            <p id="breadcrumbs">/</p>
         </div>
         <div id="main-code"></div>
     </main>
@@ -59,6 +102,7 @@ limitations under the License.
 
     <!-- JavaScript scripts -->
 
+    <script defer src="/scripts/lib.js"></script>
     <script defer src="/scripts/editor.js"></script>
     <script defer src="/scripts/sidebar.js"></script>
 </body>

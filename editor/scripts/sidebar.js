@@ -20,16 +20,14 @@ let globalFileTreeData = null;
 let currentFolderNode = null;
 let folderHistory = [];
 
-const langMap = {
-    'cpp'  : 'cpp',
-    'cc'   : 'cpp',
-    'h'    : 'cpp',
-    'js'   : 'javascript',
-    'html' : 'html',
-    'css'  : 'css',
-    'py'   : 'python',
-    'json' : 'json'
-};
+function markFileDirty(filePath, isDirty) {
+    const item = document.querySelector(`[data-path="${CSS.escape(filePath)}"]`);
+    if (item) {
+        if (isDirty) item.classList.add('is-dirty');
+        else item.classList.remove('is-dirty');
+    }
+    renderUnsavedSection();
+}
 
 async function fetchFileTree() {
     try {
@@ -80,6 +78,44 @@ function buildTreeFromFlatList(flatList) {
     return root;
 }
 
+function renderUnsavedSection() {
+    const unsavedListContainer = document.getElementById('unsaved-list');
+    const unsavedSection = document.getElementById('unsaved-section');
+    const template = document.getElementById('file-item-template');
+
+    unsavedListContainer.innerHTML = '';
+
+    // Find all localStorage items starting with our cache prefix
+    const dirtyPaths = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('cs_cache:')) {
+            dirtyPaths.push(key.replace('cs_cache:', ''));
+        }
+    }
+
+    if (dirtyPaths.length === 0) {
+        unsavedSection.style.display = 'none';
+        return;
+    }
+
+    unsavedSection.style.display = 'block';
+
+    dirtyPaths.forEach(path => {
+        const clone = template.content.cloneNode(true);
+        const itemElement = clone.querySelector('.file-item');
+        const nameElement = clone.querySelector('.file-name');
+
+        // Show just the filename or relative path
+        nameElement.textContent = path.split('/').pop();
+        itemElement.setAttribute('data-path', path);
+        itemElement.classList.add('is-dirty');
+
+        itemElement.addEventListener('click', () => openFile(path));
+        unsavedListContainer.appendChild(clone);
+    });
+}
+
 function renderFolder(node) {
     const treeContainer = document.getElementById('file-tree');
     const template = document.getElementById('file-item-template');
@@ -112,32 +148,25 @@ function renderFolder(node) {
     sortedChildren.forEach(file => {
         const clone = template.content.cloneNode(true);
         const itemElement = clone.querySelector('.file-item');
-        const iconElement = clone.querySelector('.file-icon');
         const nameElement = clone.querySelector('.file-name');
 
         nameElement.textContent = file.name;
+        itemElement.setAttribute('data-path', file.path);
+
+        // Check if it's currently cached as dirty
+        if (localStorage.getItem('cs_cache:' + file.path) !== null) {
+            itemElement.classList.add('is-dirty');
+        }
 
         if (file.is_directory) {
-            itemElement.style.fontWeight = 'bold';
+            itemElement.style.fontWeight = '500';
             itemElement.addEventListener('click', () => {
                 folderHistory.push(currentFolderNode);
                 currentFolderNode = file;
                 renderFolder(currentFolderNode);
             });
         } else {
-            itemElement.addEventListener('click', () => {
-                fetch(`/api/file?path=${encodeURIComponent(file.path)}`)
-                    .then(res => res.text())
-                    .then(code => {
-                        editor.setValue(code);
-                        document.getElementById('breadcrumbs').textContent = '/' + file.path;
-
-                        const ext = file.path.split('.').pop();
-                        if (langMap[ext]) {
-                            monaco.editor.setModelLanguage(editor.getModel(), langMap[ext]);
-                        }
-                    });
-            });
+            itemElement.addEventListener('click', () => openFile(file.path));
         }
 
         treeContainer.appendChild(clone);
@@ -146,4 +175,23 @@ function renderFolder(node) {
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchFileTree();
+    renderUnsavedSection();
+
+    // Refresh button event listener
+    const refreshBtn = document.getElementById('btn-refresh');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            fetchFileTree();
+            renderUnsavedSection();
+        });
+    }
+
+    // Placeholders for future buttons
+    document.getElementById('btn-new-file').addEventListener('click', () => {
+        cs_alert("Action not yet implemented");
+    });
+
+    document.getElementById('btn-new-folder').addEventListener('click', () => {
+        cs_alert("Action not yet implemented");
+    });
 });

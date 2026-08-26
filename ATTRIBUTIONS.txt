@@ -1,0 +1,13 @@
+ATTRIBUTIONS
+
+=== CROW =============================================================
+https://crowcpp.org/ (MIT license)
+- Used for the Crow framework in the backend.
+
+=== ASIO =============================================================
+https://think-async.com/Asio/ (Boost Software License 1.0)
+- Used as the standalone networking library for backend transport.
+
+=== LUCIDE ===========================================================
+https://lucide.dev/ (MIT license)
+- Used for icons in the user interface.
