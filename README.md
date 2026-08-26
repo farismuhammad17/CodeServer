@@ -1,9 +1,13 @@
-# CodeServer
-
-*Version 0.3.0*
+<p align="center">
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.png">
+        <source media="(prefers-color-scheme: light)" srcset="assets/banner-light.png">
+        <img alt="Project Banner" src="assets/banner-light.png" width="400px">
+    </picture>
+</p>
 
 > [!IMPORTANT]
-> The project is still under construction, and still a works in concept. Testing is still pending.
+> The project is still under construction. Completion is imminent.
 
 A C++ backend, browser code editor built with the Crow framework, designed to let you instantly host a coding workspace right from your own machine. Inspired by the live-editting feature of Google Docs (and other notable code editors), I built CodeServer as a medium to collaborate with fellow programmers, and to let you code from anywhere, without the need to install any IDEs or editors. It can also double as a remote work station, where you can edit, test, and view your code from anywhere, as long as you server is up.
 
@@ -38,6 +42,7 @@ A C++ backend, browser code editor built with the Crow framework, designed to le
     * Preferences for theme, font, etc., where you can add username, "update" sends to server the IP to update the username of.
     * Store user name inside codeserver folder, use IP addresses to remember
     * Chat system; store chat messages (msg, user, time) inside `.codeserver` folder
+    * Voice chat: A google meet sort of thing, but just voice, video seems pointless.
     * Track every IP (and username) that came in, so we can have nice "Online"/"Offline" show up.
 
 * **Workspace ZIP download endpoint** for instant export.
@@ -73,6 +78,8 @@ A C++ backend, browser code editor built with the Crow framework, designed to le
     * mem: RAM used by program
 
 **Other media:** Currently, viewing PNG, JPG, etc., just dumps the raw bytes (which looks like gibberish) into the editor. We should implement a simple image viewer, and perhaps even a video player, that can stream the media from the server to the client. This is obviously a low priority, but it would be nice to have.
+
+**Blocked users / Only allowed users:** Since it *may* be hosted on the internet, it is probably better to not nuke your project if some random person comes in and deletes your files. Therefore, we should implement a simple user system, where you can add users to a "blocked" list, or an "allowed" list. If a user is blocked, they cannot access the server at all. You can use via the config menu, but also have it dynamic through the TUI.
 
 ---
 

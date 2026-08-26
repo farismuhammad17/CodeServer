@@ -28,7 +28,7 @@ limitations under the License.
 
 #include "crow.h"
 
-#define CS_VERSION "0.3.0"
+#define CS_VERSION "0.3.1"
 
 namespace fs = std::filesystem;
 
@@ -109,6 +109,31 @@ crow::response handle_styles(std::string filename) {
     std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     crow::response res(content);
     res.set_header("Content-Type", "text/css");
+    return res;
+}
+
+crow::response handle_assets(std::string filename) {
+    std::string filepath = "assets/" + filename;
+    std::ifstream file(filepath, std::ios::binary);
+    if (!file.is_open()) return crow::response(404);
+
+    // Read file contents in binary mode
+    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    crow::response res(content);
+
+    // Determine basic MIME type based on extension
+    if (filename.rfind(".ico") != std::string::npos) {
+        res.set_header("Content-Type", "image/x-icon");
+    } else if (filename.rfind(".png") != std::string::npos) {
+        res.set_header("Content-Type", "image/png");
+    } else if (filename.rfind(".jpg") != std::string::npos || filename.rfind(".jpeg") != std::string::npos) {
+        res.set_header("Content-Type", "image/jpeg");
+    } else if (filename.rfind(".svg") != std::string::npos) {
+        res.set_header("Content-Type", "image/svg+xml");
+    } else {
+        res.set_header("Content-Type", "application/octet-stream");
+    }
+
     return res;
 }
 
@@ -367,6 +392,7 @@ int main() {
     CROW_ROUTE(app, "/")(handle_root);
     CROW_ROUTE(app, "/styles/<string>")(handle_styles);
     CROW_ROUTE(app, "/scripts/<string>")(handle_scripts);
+    CROW_ROUTE(app, "/assets/<string>")(handle_assets);
     CROW_ROUTE(app, "/api/connect").methods(crow::HTTPMethod::POST)(handle_api_connect);
     CROW_ROUTE(app, "/api/tree")(handle_api_tree);
     CROW_ROUTE(app, "/api/file").methods(crow::HTTPMethod::GET)(handle_open_file);
